@@ -22,6 +22,11 @@ if (!isset($_SESSION['CPM']) || $_SESSION['CPM'] != 1) {
     var query_in_progress = 0;
     ZeroClipboard.setMoviePath("<?php echo $_SESSION['settings']['cpassman_url'];?>/includes/js/zeroclipboard/ZeroClipboard.swf");
 
+function aes_decrypt(text)
+{
+    return Aes.Ctr.decrypt(text, "<?php echo $_SESSION['key'];?>", 256);
+}
+
 //  Part of Safari 6 OS X fix
     //  clean up HTML for sending via JSON to PHP code
     function clean_up_html_safari(input)
