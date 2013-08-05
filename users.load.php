@@ -642,11 +642,6 @@ function loginCreation()
 	$("#new_login").val($("#new_name").val().toLowerCase().replace(/ /g,"")+"."+$("#new_lastname").val().toLowerCase().replace(/ /g,""));
 }
 
-function aes_decrypt(text)
-{
-    return Aes.Ctr.decrypt(text, "<?php echo $_SESSION['key'];?>", 256);
-}
-
 function htmlspecialchars_decode (string, quote_style)
 {
     if (string != null && string != "") {

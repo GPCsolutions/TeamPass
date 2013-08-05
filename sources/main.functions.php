@@ -747,3 +747,8 @@ function isUTF8($string)
         $string
     );
 }
+
+function aes_decrypt(text)
+{
+    return Aes.Ctr.decrypt(text, "<?php echo $_SESSION['key'];?>", 256);
+}
