@@ -141,7 +141,6 @@ if (
     sessionStorage.clear();
     -->
     </script>';
-    exit;
 
     // REDIRECTION PAGE ERREUR
     echo '
