@@ -221,9 +221,7 @@ $htmlHeaders .= '
        );
     }
 
-    /*
-    * Clean disconnection of user for security reasons.
-    *
+    //Clean disconnection of user for security reasons.
        $(window).bind("beforeunload", function() {
         if ($("#menu_action").val() == "") {
             sessionStorage.clear();
@@ -234,7 +232,7 @@ $htmlHeaders .= '
                 data : "session=expired"
             });
         }
-    });*/
+    });
 
     $(function() {
         //TOOLTIPS
