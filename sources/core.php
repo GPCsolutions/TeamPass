@@ -134,6 +134,15 @@ if (
     // Kill session
     session_destroy();
 
+    // Clear sessionStorage
+    echo '
+    <script language="javascript" type="text/javascript">
+    <!--
+    sessionStorage.clear();
+    -->
+    </script>';
+    exit;
+
     // REDIRECTION PAGE ERREUR
     echo '
     <script language="javascript" type="text/javascript">
