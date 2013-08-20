@@ -1587,7 +1587,6 @@ if (isset($_POST['type'])) {
                     document.getElementById("loader").style.display = "none";';
                     break;
                 }
-*/
                 $fh = fopen($filename, 'w');
 
                 //prepare smtp_auth variable
