@@ -2,7 +2,7 @@
 /**
  * @file          import.queries.php
  * @author        Nils Laumaillé
- * @version       2.1.13
+ * @version       2.1.18
  * @copyright     (c) 2009-2013 Nils Laumaillé
  * @licensing     GNU AFFERO GPL 3.0
  * @link          http://www.teampass.net
@@ -13,7 +13,7 @@
  */
 
 session_start();
-if (!isset($_SESSION['CPM']) || $_SESSION['CPM'] != 1) {
+if (!isset($_SESSION['CPM']) || $_SESSION['CPM'] != 1 || !isset($_SESSION['key']) || empty($_SESSION['key'])) {
     die('Hacking attempt...');
 }
 
@@ -164,7 +164,7 @@ switch ($_POST['type']) {
     //Insert into DB the items the user has selected
     case "import_items":
         //decrypt and retreive data in JSON format
-        $dataReceived = (Encryption\Crypt\aesctr::decrypt($_POST['data'], $_SESSION['encKey'], 256));
+        $dataReceived = (Encryption\Crypt\aesctr::decrypt($_POST['data'], $_SESSION['key'], 256));
 
         //Get some info about personal folder
         if ($_POST['folder'] == $_SESSION['user_id']) {

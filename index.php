@@ -9,7 +9,7 @@ session_start();
  *
  * @file          index.php
  * @author        Nils Laumaillé
- * @version       2.1.13
+ * @version       2.1.18
  * @copyright     (c) 2009-2013 Nils Laumaillé
  * @licensing     GNU AFFERO GPL 3.0
  * @link		http://www.teampass.net
@@ -54,7 +54,10 @@ require_once 'sources/main.functions.php';
 if (!isset($_SESSION['user_id']) && !isset($_POST['language'])) {
     //get default language
     $dataLanguage =
-        $db->fetchRow("SELECT valeur FROM ".$pre."misc WHERE type = 'admin' AND intitule = 'default_language'");
+        $db->fetchRow(
+            "SELECT valeur FROM ".$pre."misc
+            WHERE type = 'admin' AND intitule = 'default_language'"
+        );
     if (empty($dataLanguage[0])) {
         $_SESSION['user_language'] = "english";
         $_SESSION['user_language_flag'] = "us.png";
@@ -62,7 +65,9 @@ if (!isset($_SESSION['user_id']) && !isset($_POST['language'])) {
         $_SESSION['user_language'] = $dataLanguage[0];
         $_SESSION['user_language_flag'] = "us.png";
     }
-} elseif (isset($_SESSION['settings']['default_language']) && !isset($_SESSION['user_language'])) {
+} elseif (
+    isset($_SESSION['settings']['default_language']) && !isset($_SESSION['user_language'])
+) {
     $_SESSION['user_language'] = $_SESSION['settings']['default_language'];
 } elseif (isset($_POST['language'])) {
     $_SESSION['user_language'] = filter_var($_POST['language'], FILTER_SANITIZE_STRING);
@@ -232,6 +237,8 @@ echo '
         <input type="text" style="display:none;" id="temps_restant" value="', isset($_SESSION['fin_session']) ? $_SESSION['fin_session'] : '', '" />
         <input type="hidden" name="language" id="language" value="" />
         <input type="hidden" name="user_pw_complexity" id="user_pw_complexity" value="'.@$_SESSION['user_pw_complexity'].'" />
+        <input type="hidden" name="user_session" id="user_session" value=""/>
+        <input type="hidden" name="encryptClientServer" id="encryptClientServer" value="', isset($_SESSION['settings']['encryptClientServer']) ? $_SESSION['settings']['encryptClientServer'] : '1', '" />
     </form>';
 
 /* INSERT ITEM BUTTONS IN MENU BAR */
@@ -478,15 +485,10 @@ if (isset($_SESSION['validite_pw']) && $_SESSION['validite_pw'] == true && !empt
                     <b>'.$txt['index_session_expired'].'</b>
                 </div>';
     }
-    //Encryption info
-    echo '
-    <div id="channel_status" style="width:300px; margin-left:auto; margin-right:auto;margin-bottom:50px;padding:25px;" class="ui-state-highlight ui-corner-all">
-        ', !file_exists(SECUREPATH."/100_1024_keys.inc.php") ? $txt['channel_encryption_no_file'] :
-        '<span style="font-size: 16px;">&nbsp;'.$txt['channel_encryption_in_progress'].'</span> <img src="includes/images/ajax-loader.gif" alt="Loading..." title="Loading..." style="margin-right:15px;" />', '
-    </div>';
+
     // CONNECTION FORM
     echo '
-            <form method="post" name="form_identify" id="form_identify" action="" style="display:none;">
+            <form method="post" name="form_identify" id="form_identify" action="">
                 <div style="width:300px; margin-left:auto; margin-right:auto;margin-bottom:50px;padding:25px;" class="ui-state-highlight ui-corner-all">
                     <div style="text-align:center;font-weight:bold;margin-bottom:20px;">',
     isset($_SESSION['settings']['custom_logo']) && !empty($_SESSION['settings']['custom_logo']) ? '<img src="'.$_SESSION['settings']['custom_logo'].'" alt="" style="margin-bottom:40px;" />' : '', '<br />
@@ -501,10 +503,23 @@ if (isset($_SESSION['validite_pw']) && $_SESSION['validite_pw'] == true && !empt
                     </div>
                     <div id="connect_pw" style="margin-bottom:3px;">
                         <label for="pw" class="form_label">'.$txt['index_password'].'</label>
-                        <input type="password" size="10" id="pw" name="pw" onkeypress="if (event.keyCode == 13) identifyUser(\''.$nextUrl.'\')" class="input_text text ui-widget-content ui-corner-all" />
+                        <input type="password" size="10" id="pw" name="pw" onkeypress="if (event.keyCode == 13) identifyUser(\''.$nextUrl.'\', \'', isset($_SESSION['settings']['2factors_authentication']) && $_SESSION['settings']['2factors_authentication'] == 1 ? 1 : '', '\')" class="input_text text ui-widget-content ui-corner-all" />
                     </div>';
+    // Personal salt key
+    if (isset($_SESSION['settings']['psk_authentication']) && $_SESSION['settings']['psk_authentication'] == 1) {
+        echo '
 
-    //2-Factors authentication is asked
+                    <div id="connect_psk" style="margin-bottom:3px;">
+                        <label for="personal_psk" class="form_label">'.$txt['home_personal_saltkey'].'</label>
+                        <input type="password" size="10" id="psk" name="psk" onkeypress="if (event.keyCode == 13) identifyUser(\''.$nextUrl.'\', \'', isset($_SESSION['settings']['psk_authentication']) && $_SESSION['settings']['psk_authentication'] == 1 ? 1 : '', '\')" class="input_text text ui-widget-content ui-corner-all" />
+                    </div>
+                    <div id="connect_psk_confirm" style="margin-bottom:3px; display:none;">
+                        <label for="psk_confirm" class="form_label">'.$txt['home_personal_saltkey_confirm'].'</label>
+                        <input type="password" size="10" id="psk_confirm" name="psk_confirm" onkeypress="if (event.keyCode == 13) identifyUser(\''.$nextUrl.'\', \'', isset($_SESSION['settings']['psk_authentication']) && $_SESSION['settings']['psk_authentication'] == 1 ? 1 : '', '\')" class="input_text text ui-widget-content ui-corner-all" />
+                    </div>';
+    }
+
+    // 2-Factors authentication is asked
     if (isset($_SESSION['settings']['2factors_authentication']) && $_SESSION['settings']['2factors_authentication'] == 1) {
         //Display QR
         echo '
@@ -558,7 +573,8 @@ echo '
         <div style="float:left;width:32%;text-align:center;">
             ', (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) ? $_SESSION['nb_users_online']."&nbsp;".$txt['users_online'] : "", '
         </div>
-        <div style="float:right;margin-top:5px;text-align:right;">
+        <div style="float:right;text-align:right;">
+            '. $txt['server_time']." : ".date($_SESSION['settings']['date_format'], $_SERVER['REQUEST_TIME'])." - ".date($_SESSION['settings']['time_format'], $_SERVER['REQUEST_TIME']) .'
         </div>
     </div>';
 // PAGE LOADING

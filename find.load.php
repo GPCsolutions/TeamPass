@@ -2,7 +2,7 @@
 /**
  * @file          find.load.php
  * @author        Nils Laumaillé
- * @version       2.1.13
+ * @version       2.1.18
  * @copyright     (c) 2009-2013 Nils Laumaillé
  * @licensing     GNU AFFERO GPL 3.0
  * @link          http://www.teampass.net
@@ -108,7 +108,7 @@ $("#div_item_data").dialog({
                 },
                 function(data) {
                     //decrypt data
-                    data = $.parseJSON($.jCryption.decrypt(data, sessionStorage.password));
+                    data = $.parseJSON(aes_decrypt(data));
                     var return_html = "";
                     if (data.show_detail_option != "0" || data.show_details == 0) {
                         //item expired
