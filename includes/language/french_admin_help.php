@@ -7,7 +7,7 @@ if (!isset($_SESSION['settings']['cpassman_url'])) {
 }
 
 
-$txt['help_on_folders'] = "<div class='ui-state-highlight ui-corner-all' style='padding:5px;font-weight:bold;'>
+$LANG['help_on_folders'] = "<div class='ui-state-highlight ui-corner-all' style='padding:5px;font-weight:bold;'>
 Cette page est utilisée pour créer et gérer les RÉPERTOIRES.<br />
 Un répertoire est nécessaire pour organiser et structurer vos éléments. Il est similaire à un répertoire de fichiers de votre système d'exploitation.<br />
 <span class='ui-icon ui-icon-lightbulb' style='float: left;'>&nbsp;</span>Le niveau le plus bas est appelé la RACINE.<br />
@@ -54,7 +54,7 @@ Un répertoire est nécessaire pour organiser et structurer vos éléments. Il e
         </p>
     </div>
 </div>";
-$txt['help_on_roles'] = "<div class='ui-state-highlight ui-corner-all' style='padding:5px;font-weight:bold;'>
+$LANG['help_on_roles'] = "<div class='ui-state-highlight ui-corner-all' style='padding:5px;font-weight:bold;'>
 Cette page est utilisée pour créer et modifier les RÔLES.<br />
 Un rôle est associé à un ensemble de répertoires autorisés et interdits.<br />
 Une fois plusieurs rôles paramétrés, vous pouvez les utiliser pour les associer à un compte utilisateur.
@@ -64,7 +64,7 @@ Une fois plusieurs rôles paramétrés, vous pouvez les utiliser pour les associ
     <div>
         Cliquez sur l'icône <img src='includes/images/users--plus.png' alt='Ajouter un utilisateur' />. Une boite de dialogue spécifique vous demandera de saisir l'intitulé de ce nouveau rôle.
     </div>
-    
+
     <h3><a href='#'>Autoriser ou interdire un RÉPERTOIRE</a></h3>
     <div>
         Vous devez utiliser la matrice 'Rôles / Répertoires' pour définir les droits d'accès des rôles. Si la couleur de la cellule est rouge, alors le rôle ne pourra pas accéder à ce répertoire, et si la cellule est verte, alors le rôle pourra accéder à la cellule.<br />
@@ -74,19 +74,19 @@ Une fois plusieurs rôles paramétrés, vous pouvez les utiliser pour les associ
         </p>
         Dans la capture d'écran, vous voyez que le répertoire 'Cleaner' est autorisé pour le rôle 'Dev' mais qu'il ne l'est pas pour le rôle 'Commercial'.
     </div>
-    
+
     <h3><a href='#'>Rafraîchir manuellement la matrice</a></h3>
     <div>
         Il vous suffit de cliquer sur l'icône <img src='includes/images/arrow_refresh.png' alt='Rafraîchir' />.
     </div>
-    
+
     <h3><a href='#'>Éditer un rôle</a></h3>
     <div>
         Il est possible de changer l'intitulé d'un rôle sans aucun impact sur les différents paramétrages effectués..<br />
         Sélectionnez le rôle que vous voulez renommer et cliquez sur l'icône <img src='includes/images/ui-tab--pencil.png' alt='Éditer' />.<br />
         Cela ouvrira une boite de dialogue dans laquelle vous pourrez saisir le nouvel intitulé.
     </div>
-    
+
     <h3><a href='#'>Supprimer un rôle</a></h3>
     <div>
         Vous pouvez tout à fait supprimer un rôle. Cela aura pour effet de supprimer ce rôle de chaque utilisateur le possédant.<br />
@@ -94,7 +94,7 @@ Une fois plusieurs rôles paramétrés, vous pouvez les utiliser pour les associ
         Cela ouvrira une boîte de dialogue dans laquelle vous devrez confirmer la suppression.
     </div>
 </div>";
-$txt['help_on_users'] = "<div class='ui-state-highlight ui-corner-all' style='padding:5px;font-weight:bold;'>
+$LANG['help_on_users'] = "<div class='ui-state-highlight ui-corner-all' style='padding:5px;font-weight:bold;'>
 Cette page est utilisée pour créer et gérer les UTILISATEURS.<br />
 Un compte utilisateur est nécessaire pour chaque personne physique devant utiliser TeamPass.<br />
 <span class='ui-icon ui-icon-lightbulb' style='float: left;'>&nbsp;</span>La 1ère étape consiste à associer l'utilisateur à un ou plusieurs rôles.<br />

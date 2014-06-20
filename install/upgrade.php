@@ -1,4 +1,5 @@
 <?php
+require_once('../sources/sessions.php');
 session_start();
 //Session teampass tag
 $_SESSION['CPM'] = 1;
@@ -72,12 +73,12 @@ if (
         <script type="text/javascript" src="install.js"></script>
         <script type="text/javascript" src="js/jquery.min.js"></script>
         <script type="text/javascript" src="js/jquery-ui.min.js"></script>
-        <script type="text/javascript" src="gauge/gauge.js"></script>
         <script type="text/javascript" src="js/aes.min.js"></script>
 
         <script type="text/javascript">
         //if (typeof $=='undefined') {function $(v) {return(document.getElementById(v));}}
         $(function() {
+            /*
             if (document.getElementById("progressbar")) {
                 gauge.add($("progressbar"), { width:600, height:30, name: 'pbar', limit: true, gradient: true, scale: 10, colors:['#ff0000','#00ff00']});
                 if (document.getElementById("step").value == "1") gauge.modify($('pbar'),{values:[0.20,1]});
@@ -86,6 +87,7 @@ if (
                 else if (document.getElementById("step").value == "4") gauge.modify($('pbar'),{values:[0.70,1]});
                 else if (document.getElementById("step").value == "5") gauge.modify($('pbar'),{values:[0.85,1]});
             }
+            */
         });
 
         function aes_encrypt(text)
@@ -112,12 +114,17 @@ if (
                 } else
                 if (step == "step2") {
                     document.getElementById("loader").style.display = "";
+                	var maintenance = 1;
+                	if (document.getElementById("no_maintenance_mode").checked==true) {
+                		maintenance = 0;
+                	}
                     var data = "type="+step+
                     "&db_host="+document.getElementById("db_host").value+
                     "&db_login="+escape(document.getElementById("db_login").value)+
                     "&tbl_prefix="+escape(document.getElementById("tbl_prefix").value)+
                     "&db_password="+aes_encrypt(document.getElementById("db_pw").value)+
-                    "&db_bdd="+document.getElementById("db_bdd").value;
+	            	"&db_bdd="+document.getElementById("db_bdd").value+
+	            	"&no_maintenance_mode="+maintenance;
                 } else
                 if (step == "step3") {
                     document.getElementById("res_step3").innerHTML = '<img src="images/ajax-loader.gif" alt="" />';
@@ -167,7 +174,6 @@ if (
                     	$("#change_pw_encryption_progress").html("Done");
                     	$("#but_encrypt_continu").hide();
                     	/* Unlock this step */
-                        gauge.modify($("pbar"),{values:[0.75,1]});
                         document.getElementById("but_next").disabled = "";
                         document.getElementById("but_launch").disabled = "disabled";
                         document.getElementById("res_step4").innerHTML = "dataBase has been populated";
@@ -191,6 +197,7 @@ if (isset($_POST['db_host'])) {
     $_SESSION['db_login'] = $_POST['db_login'];
     $_SESSION['db_pw'] = $_POST['db_pw'];
     $_SESSION['tbl_prefix'] = $_POST['tbl_prefix'];
+	//$_SESSION['session_start'] = $_POST['session_start'];
     if (isset($_POST['send_stats'])) {
         $_SESSION['send_stats'] = $_POST['send_stats'];
     } else {
@@ -231,8 +238,8 @@ if (!isset($_GET['step']) && !isset($_POST['step'])) {
                      - have the database connection informations,<br />
                      - get some CHMOD rights on the server.<br />
                      <br />
-                     <span style="font-weight:bold; font-size:14px;color:#C60000;"><img src="../includes/images/error.png" />&nbsp;ALWAYS BE SURE TO CREATE A DUMP OF YOUR DATABASE BEFORE UPGRADING</span>
-                     <div style="" class="ui-widget ui-state-highlight">
+                     <div style="font-weight:bold; font-size:14px;color:#C60000;"><img src="../includes/images/error.png" />&nbsp;ALWAYS BE SURE TO CREATE A DUMP OF YOUR DATABASE BEFORE UPGRADING</div>
+                     <div class="">
                          <h4>TeamPass is distributed under GNU AFFERO GPL licence.</h4>';
                         // Display the license file
                         $Fnm = "../license.txt";
@@ -305,10 +312,18 @@ if (!isset($_GET['step']) && !isset($_POST['step'])) {
                      <label for="tbl_prefix">Table prefix :</label><input type="text" id="tbl_prefix" name="tbl_prefix" class="step" value="'.$_SESSION['pre'].'" />
                      </fieldset>
 
+                     <fieldset><legend>Maintenance Mode</legend>
+                     <p>
+                     	<input type="checkbox" name="no_maintenance_mode" id="no_maintenance_mode"  />&nbsp;Don\'t activate the Maintenance mode
+					 </p>
+					 <i>By default, the maintenance mode is enabled when Update is performed. This prevents any user to use Teampass during the scripts are running.<br />
+					 Any how, some administrators may want to disturb the users. Then please disable the maintenance mode. Nevertheless keep in mind that update process may fail due to parallal queries.</i>
+					 </fieldset>
+
                      <fieldset><legend>Anonymous statistics</legend>
                      <input type="checkbox" name="send_stats" id="send_stats" />Send monthly anonymous statistics.<br />
-                     Please considere sending your statistics as a way to contribute to futur improvments of TeamPass. Indeed this will help the creator to evaluate how the tool is used and by this way how to improve the tool. When enabled, the tool will automatically send once by month a bunch of statistics without any action from you. Of course, those data are absolutely anonymous and no data is exported, just the next informations : number of users, number of folders, number of items, tool version, ldap enabled, and personal folders enabled.<br>
-                     This option can be enabled or disabled through the administration panel.
+                     <i>Please considere sending your statistics as a way to contribute to futur improvments of TeamPass. Indeed this will help the creator to evaluate how the tool is used and by this way how to improve the tool. When enabled, the tool will automatically send once by month a bunch of statistics without any action from you. Of course, those data are absolutely anonymous and no data is exported, just the next informations : number of users, number of folders, number of items, tool version, ldap enabled, and personal folders enabled.<br>
+                     This option can be enabled or disabled through the administration panel.</i>
                      </fieldset>
 
                      <div style="margin-top:20px;font-weight:bold;text-align:center;height:27px;" id="res_step2"></div>
@@ -366,6 +381,12 @@ if (!isset($_GET['step']) && !isset($_POST['step'])) {
                          <tr><td>Add table "Emails"</td><td><span id="tbl_17"></span></td></tr>
                          <tr><td>Add table "Automatic_del"</td><td><span id="tbl_18"></span></td></tr>
                          <tr><td>Add table "items_edition"</td><td><span id="tbl_19"></span></td></tr>
+                         <tr><td>Add table "categories"</td><td><span id="tbl_20"></span></td></tr>
+                         <tr><td>Add table "categories_items"</td><td><span id="tbl_21"></span></td></tr>
+                         <tr><td>Add table "categories_folders"</td><td><span id="tbl_22"></span></td></tr>
+                         <tr><td>Add table "api"</td><td><span id="tbl_23"></span></td></tr>
+                         <tr><td>Add table "otv"</td><td><span id="tbl_24"></span></td></tr>
+                         <tr><td>Add table "suggestion"</td><td><span id="tbl_25"></span></td></tr>
                      </table>
                      <div style="display:none;" id="change_pw_encryption">
                          <br />
@@ -403,7 +424,7 @@ if (!isset($_GET['step']) && !isset($_POST['step'])) {
     } else {
         echo '<br /><br />
         <label for="sk_path" style="width:300px;">Absolute path to SaltKey :
-            <img src="../includes/images/information-white.png" alt="" title="The SaltKey is stored in a file called sk.php. But for security reasons, this file should be stored in a folder outside the www folder of your server. So please, indicate here the path to this folder. <br> If this field remains empty, this file will be stored in folder \'/includes\'.">
+            <img src="../includes/images/information-white.png" alt="" title="The SaltKey is stored in a file called sk.php. But for security reasons, this file should be stored in a folder outside the www folder of your server. So please, indicate here the path to this folder.">
         </label><input type="text" id="sk_path" name="sk_path" value="'.substr($_SESSION['sk_path'], 0, strlen($_SESSION['sk_path'])-7).'" size="75" /><br />
         ';
     }

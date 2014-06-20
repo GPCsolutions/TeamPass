@@ -1,5 +1,7 @@
 <?php
+require_once('../sources/sessions.php');
 session_start();
+error_reporting(E_ERROR | E_PARSE);
 header("Content-type: text/html; charset=utf-8");
 
 $_SESSION['CPM'] = 1;
@@ -42,6 +44,12 @@ if (isset($_POST['type'])) {
                 $txt .= '<span style=\"padding-left:30px;font-size:13pt;\">PHP extension \"mcrypt\"&nbsp;&nbsp;<img src=\"images/minus-circle.png\"></span><br />';
             } else {
                 $txt .= '<span style=\"padding-left:30px;font-size:13pt;\">PHP extension \"mcrypt\"&nbsp;&nbsp;<img src=\"images/tick-circle.png\"></span><br />';
+            }
+            if (!extension_loaded('mbstring')) {
+                $okExtensions = false;
+                $txt .= '<span style=\"padding-left:30px;font-size:13pt;\">PHP extension \"mbstring\"&nbsp;&nbsp;<img src=\"images/minus-circle.png\"></span><br />';
+            } else {
+                $txt .= '<span style=\"padding-left:30px;font-size:13pt;\">PHP extension \"mbstring\"&nbsp;&nbsp;<img src=\"images/tick-circle.png\"></span><br />';
             }
             if (!extension_loaded('openssl')) {
                 $okExtensions = false;
@@ -90,19 +98,19 @@ if (isset($_POST['type'])) {
 
             $res = "";
             // connexion
-            if (@mysql_connect($_POST['db_host'], $_POST['db_login'], $dbPassword)) {
-                if (@mysql_select_db($_POST['db_bdd'])) {
+            if ($dbTmp = @mysqli_connect($_POST['db_host'], $_POST['db_login'], $dbPassword)) {
+                if (@mysqli_select_db($dbTmp, $_POST['db_bdd'])) {
                     echo 'gauge.modify($("pbar"),{values:[0.40,1]});';
-                    $res = "Connection is successfull";
+                    $res = "Connection is successful";
                     echo 'document.getElementById("but_next").disabled = "";';
                 } else {
                     echo 'gauge.modify($("pbar"),{values:[0.30,1]});';
-                    $res = "Impossible to get connected to table";
+                    $res = "Failed to connect to table";
                     echo 'document.getElementById("but_next").disabled = "disabled";';
                 }
             } else {
                 echo 'gauge.modify($("pbar"),{values:[0.30,1]});';
-                $res = "Impossible to get connected to server";
+                $res = "Failed to connect to server";
                 echo 'document.getElementById("but_next").disabled = "disabled";';
             }
             echo 'document.getElementById("res_step2").innerHTML = "'.$res.'";';
@@ -113,6 +121,11 @@ if (isset($_POST['type'])) {
          * STEP 3
          */
         case "step3":
+            // check skpath
+            if (substr($_POST['skPath'], strlen($_POST['skPath'])-1) == "/" || substr($_POST['skPath'], strlen($_POST['skPath'])-1) == "\"") {
+                $_POST['skPath'] = substr($_POST['skPath'], 0, strlen($_POST['skPath'])-1);
+            }
+
             if (is_dir($_POST['skPath'])) {
                 if (is_writable($_POST['skPath'])) {
                     echo 'document.getElementById("sk_path_res").innerHTML = "<img src=\"images/tick.png\">";
@@ -138,16 +151,15 @@ if (isset($_POST['type'])) {
             // Populate dataBase
             $res = "";
 
-            @mysql_connect($_SESSION['db_host'], $_SESSION['db_login'], $_SESSION['db_pw']);
-            @mysql_select_db($_SESSION['db_bdd']);
-            $dbTmp = mysql_connect($_SESSION['db_host'], $_SESSION['db_login'], $_SESSION['db_pw']);
-            mysql_select_db($_SESSION['db_bdd'], $dbTmp);
+            @mysqli_connect($_SESSION['db_host'], $_SESSION['db_login'], $_SESSION['db_pw'], $_SESSION['db_bdd']);
+            $dbTmp = mysqli_connect($_SESSION['db_host'], $_SESSION['db_login'], $_SESSION['db_pw']);
+            mysqli_select_db($dbTmp, $_SESSION['db_bdd']);
 
             //FORCE UTF8 DATABASE
-            mysql_query("ALTER DATABASE `".$_SESSION['db_bdd']."` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci");
+            mysqli_query($dbTmp, "ALTER DATABASE `".$_SESSION['db_bdd']."` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci");
 
             ## TABLE 2
-            $res2 = mysql_query(
+            $res2 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."items` (
                   `id` int(12) NOT null AUTO_INCREMENT,
                   `label` varchar(100) NOT NULL,
@@ -168,15 +180,15 @@ if (isset($_POST['type'])) {
             if ($res2) {
                 echo 'document.getElementById("tbl_2").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ITEMS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ITEMS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_2").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 3
-            $res3 = mysql_query(
+            $res3 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."log_items` (
                   `id_item` int(8) NOT NULL,
                   `date` varchar(50) NOT NULL,
@@ -188,24 +200,24 @@ if (isset($_POST['type'])) {
             if ($res3) {
                 echo 'document.getElementById("tbl_3").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table LOG_ITEMS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table LOG_ITEMS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_3").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 4 - MISC
             require_once '../includes/language/english.php';
             require_once '../includes/include.php';
-            $res4 = mysql_query(
+            $res4 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."misc` (
                   `type` varchar(50) NOT NULL,
                   `intitule` varchar(100) NOT NULL,
                   `valeur` varchar(100) NOT NULL
                ) CHARSET=utf8;"
             );
-            mysql_query(
+            mysqli_query($dbTmp,
                 "INSERT INTO `".$_SESSION['tbl_prefix']."misc` (`type`, `intitule`, `valeur`) VALUES
                 ('admin', 'max_latest_items', '10'),
                 ('admin', 'enable_favourites', '1'),
@@ -233,6 +245,14 @@ if (isset($_POST['type'])) {
                 ('admin','encryptClientServer','1'),
                 ('admin','cpassman_version','".$k['version']."'),
                 ('admin','ldap_mode','0'),
+                ('admin','ldap_type','0'),
+                ('admin','ldap_suffix','0'),
+                ('admin','ldap_domain_dn','0'),
+                ('admin','ldap_domain_controler','0'),
+                ('admin','ldap_user_attribute','0'),
+                ('admin','ldap_ssl','0'),
+                ('admin','ldap_tls','0'),
+                ('admin','ldap_elusers','0'),
                 ('admin','richtext','0'),
                 ('admin','allow_print','0'),
                 ('admin','show_description','1'),
@@ -251,6 +271,7 @@ if (isset($_POST['type'])) {
                 ('admin','custom_login_text',''),
                 ('admin','default_language','english'),
                 ('admin', 'send_stats', '".$_SESSION['send_stats']."'),
+                ('admin', 'get_tp_info', '1'),
                 ('admin', 'send_mail_on_user_login', '0'),
                 ('cron', 'sending_emails', '0'),
                 ('admin', 'nb_items_by_query', 'auto'),
@@ -278,22 +299,28 @@ if (isset($_POST['type'])) {
                 ('admin','upload_imageresize_options','1'),
                 ('admin','upload_imageresize_width','800'),
                 ('admin','upload_imageresize_height','600'),
-                ('admin','upload_imageresize_quality','90')
+                ('admin','upload_imageresize_quality','90'),
+                ('admin','use_md5_password_as_salt','0'),
+                ('admin','ga_website_name','TeamPass for ChangeMe'),
+                ('admin','api','0'),
+                ('admin','subfolder_rights_as_parent','0'),
+                ('admin','show_only_accessible_folders','0'),
+                ('admin','enable_suggestion','0')
                 ;"
             );
 
             if ($res4) {
                 echo 'document.getElementById("tbl_4").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table MISC! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table MISC! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_4").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 5 - NEESTED_TREE
-            $res5 = mysql_query(
+            $res5 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."nested_tree` (
                   `id` bigint(20) unsigned NOT null AUTO_INCREMENT,
                   `parent_id` int(11) NOT NULL,
@@ -316,15 +343,15 @@ if (isset($_POST['type'])) {
             if ($res5) {
                 echo 'document.getElementById("tbl_5").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table NESTED_TREE! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table NESTED_TREE! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_5").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 6 - RIGHTS
-            $res6 = mysql_query(
+            $res6 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."rights` (
                   `id` int(12) NOT null AUTO_INCREMENT,
                   `tree_id` int(12) NOT NULL,
@@ -336,15 +363,15 @@ if (isset($_POST['type'])) {
             if ($res6) {
                 echo 'document.getElementById("tbl_6").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table RIGHTS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table RIGHTS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_6").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 7 - USERS
-            $res7 = mysql_query(
+            $res7 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."users` (
                   `id` int(12) NOT null AUTO_INCREMENT,
                   `login` varchar(50) NOT NULL,
@@ -373,7 +400,8 @@ if (isset($_POST['type'])) {
                   `lastname` varchar(100) NULL,
                   `session_end` varchar(30) NULL,
                   `isAdministratedByRole` tinyint(5) NOT null DEFAULT '0',
-                  `psk` varchar(400) NOT NULL,
+                  `psk` varchar(400) NULL,
+                  `ga` varchar(50) NULL,
                   PRIMARY KEY (`id`),
                   UNIQUE KEY `login` (`login`)
                ) CHARSET=utf8;"
@@ -382,9 +410,9 @@ if (isset($_POST['type'])) {
                 echo 'document.getElementById("tbl_7").innerHTML = "<img src=\"images/tick.png\">";';
                 require_once '../sources/main.functions.php';
                 //vérifier que l'admin n'existe pas
-                $tmp = mysql_fetch_row(mysql_query("SELECT COUNT(*) FROM `".$_SESSION['tbl_prefix']."users` WHERE login = 'admin'"));
+                $tmp = mysqli_fetch_row(mysqli_query($dbTmp, "SELECT COUNT(*) FROM `".$_SESSION['tbl_prefix']."users` WHERE login = 'admin'"));
                 if ($tmp[0] == 0) {
-                    $res8 = mysql_query(
+                    $res8 = mysqli_query($dbTmp,
                         "INSERT INTO `".$_SESSION['tbl_prefix']."users` (`id`, `login`, `pw`, `groupes_visibles`, `derniers`, `key_tempo`, `last_pw_change`, `last_pw`, `admin`, `fonction_id`, `groupes_interdits`, `last_connexion`, `gestionnaire`, `email`, `favourites`, `latest_items`, `personal_folder`) VALUES (NULL, 'admin', '".bCrypt('admin','13' )."', '', '', '', '', '', '1', '', '', '', '0', '', '', '', '0')"
                     );
                     if ($res8) {
@@ -393,23 +421,23 @@ if (isset($_POST['type'])) {
                         echo 'document.getElementById("res_step4").innerHTML = "Could not import admin account!";';
                         echo 'document.getElementById("tbl_8").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                         echo 'document.getElementById("loader").style.display = "none";';
-                        mysql_close($dbTmp);
+                        mysqli_close($dbTmp);
                         break;
                     }
                 } else {
-                    mysql_query("UPDATE `".$_SESSION['tbl_prefix']."users` SET `pw` = '".bCrypt('admin','13' )."' WHERE login = 'admin' AND id = '1'");
+                    mysqli_query($dbTmp, "UPDATE `".$_SESSION['tbl_prefix']."users` SET `pw` = '".bCrypt('admin','13' )."' WHERE login = 'admin' AND id = '1'");
                     echo 'document.getElementById("tbl_8").innerHTML = "<img src=\"images/tick.png\">";';
                 }
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table USERS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table USERS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_7").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 8 - TAGS
-            $res8 = mysql_query(
+            $res8 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."tags` (
                   `id` int(12) NOT null AUTO_INCREMENT,
                   `tag` varchar(30) NOT NULL,
@@ -421,15 +449,15 @@ if (isset($_POST['type'])) {
             if ($res8) {
                 echo 'document.getElementById("tbl_9").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table TAGS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table TAGS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_9").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 9 - LOG_SYSTEM
-            $res8 = mysql_query(
+            $res8 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."log_system` (
                   `id` int(12) NOT null AUTO_INCREMENT,
                   `type` varchar(20) NOT NULL,
@@ -443,15 +471,15 @@ if (isset($_POST['type'])) {
             if ($res8) {
                 echo 'document.getElementById("tbl_10").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table LOG_SYSTEM! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table LOG_SYSTEM! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_10").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 10 - FILES
-            $res9 = mysql_query(
+            $res9 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."files` (
                 `id` int(11) NOT null AUTO_INCREMENT,
                 `id_item` int(11) NOT NULL,
@@ -466,15 +494,15 @@ if (isset($_POST['type'])) {
             if ($res9) {
                 echo 'document.getElementById("tbl_11").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table FILES! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table FILES! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_11").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE CACHE
-            $res9 = mysql_query(
+            $res9 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."cache` (
                 `id` int(12) NOT NULL,
                 `label` varchar(50) NOT NULL,
@@ -491,15 +519,15 @@ if (isset($_POST['type'])) {
             if ($res9) {
                 echo 'document.getElementById("tbl_12").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table FILES! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table FILES! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_12").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 13 - ROLES_TITLES
-            $res13 = mysql_query(
+            $res13 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."roles_title` (
                   `id` int(12) NOT null AUTO_INCREMENT,
                   `title` varchar(50) NOT NULL,
@@ -512,15 +540,15 @@ if (isset($_POST['type'])) {
             if ($res13) {
                 echo 'document.getElementById("tbl_13").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ITEMS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ITEMS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_13").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE 14 - ROLES_VALUES
-            $res14 = mysql_query(
+            $res14 = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."roles_values` (
                   `role_id` int(12) NOT NULL,
                   `folder_id` int(12) NOT NULL
@@ -529,15 +557,15 @@ if (isset($_POST['type'])) {
             if ($res14) {
                 echo 'document.getElementById("tbl_14").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ROLES! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ROLES! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_14").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE KB
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."kb` (
                     `id` int(12) NOT null AUTO_INCREMENT,
                     `category_id` int(12) NOT NULL,
@@ -551,15 +579,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_15").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KB! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KB! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_15").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE KB_CATEGORIES
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."kb_categories` (
                     `id` int(12) NOT null AUTO_INCREMENT,
                     `category` varchar(50) NOT NULL,
@@ -569,15 +597,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_16").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KB_CATEGORIES! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KB_CATEGORIES! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_16").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
             /*
             ## TABLE 14 - ROLES_VALUES
-            $res14 = mysql_query("
+            $res14 = mysqli_query($dbTmp,"
                 CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."roles_values` (
                   `role_id` int(12) NOT NULL,
                   `folder_id` int(12) NOT NULL
@@ -585,15 +613,15 @@ if (isset($_POST['type'])) {
             if ($res14) {
                 echo 'document.getElementById("tbl_14").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ITEMS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table ITEMS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_14").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
             */
             ## TABLE KB_ITEMS
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."kb_items` (
                 `kb_id` tinyint(12) NOT NULL,
                 `item_id` tinyint(12) NOT NULL
@@ -602,15 +630,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_17").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KB_ITEMS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KB_ITEMS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_17").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE restriction_to_roles
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."restriction_to_roles` (
                 `role_id` int(12) NOT NULL,
                 `item_id` int(12) NOT NULL
@@ -619,15 +647,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_18").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table restriction_to_roles! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table restriction_to_roles! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_18").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE KEYS
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."keys` (
                 `table` varchar(25) NOT NULL,
                 `id` int(20) NOT NULL,
@@ -637,15 +665,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_19").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KEYS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table KEYS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_19").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE LANGUAGE
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."languages` (
                 `id` INT(10) NOT null AUTO_INCREMENT PRIMARY KEY ,
                 `name` VARCHAR(50) NOT null ,
@@ -654,7 +682,7 @@ if (isset($_POST['type'])) {
                 `flag` VARCHAR(30) NOT NULL
                ) CHARSET=utf8;"
             );
-            mysql_query(
+            mysqli_query($dbTmp,
                 "INSERT INTO `".$_SESSION['tbl_prefix']."languages` (`id`, `name`, `label`, `code`, `flag`) VALUES
                 ('', 'french', 'French' , 'fr', 'fr.png'),
                 ('', 'english', 'English' , 'us', 'us.png'),
@@ -675,15 +703,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_20").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table LANGUAGES! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table LANGUAGES! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_20").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE EMAILS
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."emails` (
                 `timestamp` INT(30) NOT null ,
                 `subject` VARCHAR(255) NOT null ,
@@ -695,15 +723,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_21").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table EMAILS! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table EMAILS! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_21").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE AUTOMATIC DELETION
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."automatic_del` (
                 `item_id` int(11) NOT NULL,
                 `del_enabled` tinyint(1) NOT NULL,
@@ -714,15 +742,15 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_22").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table AUTOMATIC_DEL! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table AUTOMATIC_DEL! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_22").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
                 break;
             }
 
             ## TABLE items_edition
-            $res = mysql_query(
+            $res = mysqli_query($dbTmp,
                 "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."items_edition` (
                 `item_id` int(11) NOT NULL,
                 `user_id` int(11) NOT NULL,
@@ -732,10 +760,136 @@ if (isset($_POST['type'])) {
             if ($res) {
                 echo 'document.getElementById("tbl_23").innerHTML = "<img src=\"images/tick.png\">";';
             } else {
-                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table items_edition! '.mysql_error().'";';
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table items_edition! '.mysqli_error($dbTmp).'";';
                 echo 'document.getElementById("tbl_23").innerHTML = "<img src=\"images/exclamation-red.png\">";';
                 echo 'document.getElementById("loader").style.display = "none";';
-                mysql_close($dbTmp);
+                mysqli_close($dbTmp);
+                break;
+            }
+
+            ## TABLE categories
+            $res = mysqli_query($dbTmp,
+                "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."categories` (
+                `id` int(12) NOT NULL AUTO_INCREMENT,
+                `parent_id` int(12) NOT NULL,
+                `title` varchar(255) NOT NULL,
+                `level` int(2) NOT NULL,
+                `description` text NOT NULL,
+                `type` varchar(50) NOT NULL,
+                `order` int(12) NOT NULL,
+                 PRIMARY KEY (`id`)
+               ) CHARSET=utf8;"
+            );
+            if ($res) {
+                echo 'document.getElementById("tbl_24").innerHTML = "<img src=\"images/tick.png\">";';
+            } else {
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table categories! '.addslashes(mysqli_error($dbTmp)).'";';
+                echo 'document.getElementById("tbl_24").innerHTML = "<img src=\"images/exclamation-red.png\">";';
+                echo 'document.getElementById("loader").style.display = "none";';
+                mysqli_close($dbTmp);
+                break;
+            }
+
+            ## TABLE categories_items
+            $res = mysqli_query($dbTmp,
+                "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."categories_items` (
+                `id` int(12) NOT NULL AUTO_INCREMENT,
+                `field_id` int(11) NOT NULL,
+                `item_id` int(11) NOT NULL,
+                `data` text NOT NULL,
+                 PRIMARY KEY (`id`)
+               ) CHARSET=utf8;"
+            );
+            if ($res) {
+                echo 'document.getElementById("tbl_25").innerHTML = "<img src=\"images/tick.png\">";';
+            } else {
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table categories_items! '.mysqli_error($dbTmp).'";';
+                echo 'document.getElementById("tbl_25").innerHTML = "<img src=\"images/exclamation-red.png\">";';
+                echo 'document.getElementById("loader").style.display = "none";';
+                mysqli_close($dbTmp);
+                break;
+            }
+
+        	## TABLE categories_folders
+        	$res = mysqli_query($dbTmp,
+        	"CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."categories_folders` (
+                `id_category` int(12) NOT NULL,
+                `id_folder` int(12) NOT NULL
+               ) CHARSET=utf8;"
+        	);
+        	if ($res) {
+        		echo 'document.getElementById("tbl_26").innerHTML = "<img src=\"images/tick.png\">";';
+        	} else {
+        		echo 'document.getElementById("res_step4").innerHTML = "An error appears on table categories_folders! '.mysqli_error($dbTmp).'";';
+        		echo 'document.getElementById("tbl_26").innerHTML = "<img src=\"images/exclamation-red.png\">";';
+        		echo 'document.getElementById("loader").style.display = "none";';
+        		mysqli_close($dbTmp);
+        		break;
+        	}
+
+            ## TABLE api
+            $res = mysqli_query($dbTmp,
+                "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."api` (
+                `id` int(20) NOT NULL AUTO_INCREMENT,
+                `type` varchar(15) NOT NULL,
+                `label` varchar(255) NOT NULL,
+                `value` varchar(255) NOT NULL,
+                `timestamp` varchar(50) NOT NULL,
+                PRIMARY KEY (`id`)
+               ) CHARSET=utf8;"
+            );
+            if ($res) {
+                echo 'document.getElementById("tbl_27").innerHTML = "<img src=\"images/tick.png\">";';
+            } else {
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table API! '.mysqli_error($dbTmp).'";';
+                echo 'document.getElementById("tbl_27").innerHTML = "<img src=\"images/exclamation-red.png\">";';
+                echo 'document.getElementById("loader").style.display = "none";';
+                mysqli_close($dbTmp);
+                break;
+            }
+
+            ## TABLE otv
+            $res = mysqli_query($dbTmp,
+                "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."otv` (
+                `id` int(10) NOT NULL AUTO_INCREMENT,
+                `timestamp` text NOT NULL,
+                `code` varchar(100) NOT NULL,
+                `item_id` int(12) NOT NULL,
+                `originator` tinyint(12) NOT NULL,
+                PRIMARY KEY (`id`)
+               ) CHARSET=utf8;"
+            );
+            if ($res) {
+                echo 'document.getElementById("tbl_28").innerHTML = "<img src=\"images/tick.png\">";';
+            } else {
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table OTV! '.mysqli_error($dbTmp).'";';
+                echo 'document.getElementById("tbl_28").innerHTML = "<img src=\"images/exclamation-red.png\">";';
+                echo 'document.getElementById("loader").style.display = "none";';
+                mysqli_close($dbTmp);
+                break;
+            }
+
+            ## TABLE SUGGESTIONS
+            $res = mysqli_query($dbTmp,
+                "CREATE TABLE IF NOT EXISTS `".$_SESSION['tbl_prefix']."suggestion` (
+                `id` tinyint(12) NOT NULL AUTO_INCREMENT,
+                `label` varchar(255) NOT NULL,
+                `password` text NOT NULL,
+                `description` text NOT NULL,
+                `author_id` int(12) NOT NULL,
+                `folder_id` int(12) NOT NULL,
+                `comment` text NOT NULL,
+                `key` varchar(50) NOT NULL,
+                PRIMARY KEY (`id`)
+               ) CHARSET=utf8;"
+            );
+            if ($res) {
+                echo 'document.getElementById("tbl_29").innerHTML = "<img src=\"images/tick.png\">";';
+            } else {
+                echo 'document.getElementById("res_step4").innerHTML = "An error appears on table SUGGESTION! '.mysqli_error($dbTmp).'";';
+                echo 'document.getElementById("tbl_29").innerHTML = "<img src=\"images/exclamation-red.png\">";';
+                echo 'document.getElementById("loader").style.display = "none";';
+                mysqli_close($dbTmp);
                 break;
             }
 
@@ -743,7 +897,7 @@ if (isset($_POST['type'])) {
             echo 'document.getElementById("but_next").disabled = "";';
             echo 'document.getElementById("res_step4").innerHTML = "dataBase has been populated";';
             echo 'document.getElementById("loader").style.display = "none";';
-            mysql_close($dbTmp);
+            mysqli_close($dbTmp);
             break;
 
         /**

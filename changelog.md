@@ -1,60 +1,63 @@
-|==============================================================================|
-|				TeamPass - A Collaborative Passwords Manager				   |
-|						2009-2013 (c) Nils Laumaillé						   |
-|==============================================================================|
+﻿2.1.20
+ #492 - Default admin password not working
+ #509 - Password complexity
+ #493 - Unable to purge logs
+ #503 - manual insertions in Items History log not working
+ #494 - Logs > Administration JSON error
+ #491 - Applying email address to user
+ #441 - Attachments encryption
+ #459 - Turn off strict mode
+ #477-#452 - Fix for upgrade
+ #459 - Turn off strict mode
+ #472 - Error on line 582 index.php
+ #474 - Set default to checked for secure passwords
+ #497 - Moved GA QR code creation to administration
+ #487 - Off-line mode, link make the page scroll up
+ #533 #521 #528 - Installation issue
+ #525 - Settings.php should not be commited
+ #527 - Potential security bug
+ #485 - CVS Import on V 2.1.19 quotes problems
+ #544 - DataTables warning: JSON data from server could not be parsed
+ #547 - User search
+ #520 - API access
+ #549 #550 - Server Time in footer
+ #539 - New feature: Simplify Items Tree
+ #547 - Search in Users page
+ #401 - Folder role inheretance on new folder
+ #552 - added MBstring check
+ #554 - Search-Page "Jump to item"-Button not working correctly
+ Fork from slimm609 - Encrypted Sessions and CSRFGuard enabled
+ Issues with folder creation in "personal folder"
+ #536 - one time view page for anonymous user
+ #517 - New feature: Suggest items system
+ New feature: Sub-folder inherits of parent folder
 
-********************************************************************************
-* 																		 	   *
-* 								LICENCE AGREEMENT							   *
-* Before installing and using TeamPass, you must accept its licence defined	as *
-* GNU AFFERO GPL.															   *
-* Copyright (c) 2009-2013, Nils Laumaillé (Nils@TeamPass.net)				   *
-* 																			   *
-* This program is free software: you can redistribute it and/or modify		   *
-* it under the terms of the GNU Affero General Public License as			   *
-* published by the Free Software Foundation, either version 3 of the		   *
-* License, or any later version.											   *
-* 																			   *
-* This program is distributed in the hope that it will be useful,			   *
-* but WITHOUT ANY WARRANTY; without even the implied warranty of			   *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the				   *
-* GNU Affero General Public License for more details.						   *
-* 																			   *
-* You should have received a copy of the GNU Affero General Public License	   *
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.		   *
-* 																			   *
-********************************************************************************
+2.1.19
+ #413 - fix for PHP Parse error: syntax error, unexpected '['
+ #447 - fix for PHP Fatal error: Cannot redeclare getBits()
+ #442 - problem edit folder
+ #399 - Export encrypted passwords (off-line mode)
+ #408 - Personal Salt Key changing doesn't work
+ #419 - Password complexity not refreshed
+ #418 - English translation improvement
+ #407 - "Restricted to" feature improvement
+ #402 - In item list, description is cut with <br />
+ #393 - Password input and confirmation field location
+ #388 - Unable to move items between folders
+ #400 - Extra fields for Item
+ #414 - Maintenance mode during upgrade can be disabled
+ #389 - Language dropdown not working
+ #392 - Check of absolute path for SK.PHP
+ #385 - Email not sent ... check your configuration (to be checked)
+ #379 - CSV importing not working (to be checked)
+ #134 - Login After Session Expires
+ #429 - Changed user.psk field to allow NULLs
+ #428 : error: iconv(): Detected an illegal character in input string
+ #426/#430 : New option to disable information loading in Admin page
+ #142 - Google Authenticator implemented
+ * Dialogbox not closed when changing folder name
+ * Display Item details through Find page error
 
-----------------------------  INFORMATIONS  ------------------------------------
-Website: http://www.teampass.net/
-
-BUGS & SUGGESTIONS:
-  For bugs discovery or any suggestions, please report in Github
-        https://github.com/nilsteampassnet/TeamPass/issues
-
-INSTALLATION:
-* http://www.teampass.net/tag/installation/
-* Once uploaded, launch install/install.php and follow instructions.
-
-NEEDS:
-* Apache, MySQL, PHP 5.3.0 (or higher) and mcrypt extension
-
-UPDATE:
-* Once uploaded, launch install/upgrade.php and follow instructions.
-
-LANGUAGES:
-* ENGLISH 		by Nils and Petr
-* FRENCH 		by Nils
-* CZECH 		by Petr and Philipp
-* GERMAN 		by Philipp
-* RUSSIAN 		by Anton
-* TURKISH 		by Ahmet
-* NORWEGIAN 	by Kai
-* JAPANESE		by Shinji
-* PORTUGUESE 	by Luiz LeFort
-* ITALIAN		by Federico
-
---------------------------------  CHANGELOG  -----------------------------------
 2.1.18
  #315 - jstree style.css badly referenced
  #314 - Folder is not being deleted
@@ -92,11 +95,7 @@ LANGUAGES:
  #299 - User can be explicetly administrated by Managers of specific Roles
  #300 - Personal SK is encrypted in COOKIE
  #301 - Corrected query call error
-<<<<<<< HEAD
- #302 - Under "Views" users can see items that exist in personal folders 
-=======
  #302 - Under "Views" users can see items that exist in personal folders
->>>>>>> 2.1.18
  that have been accessed
  #307 - fclose() statement badly placed
 
